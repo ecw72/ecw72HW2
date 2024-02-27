@@ -1,0 +1,244 @@
+---
+title: "Computational Sociology Homework 2: Collecting digital trace data"
+author: "Your name here"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+# Do not edit this chunk
+
+# The following lines define how the output of code chunks should behave
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(include = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(error = TRUE)
+
+# Required packages
+library(rmarkdown)
+library(knitr)
+```
+
+# Instructions
+
+This assignment is designed to build your familiarity with API usage and web-scraping. As in the previous assignment, it will involve a combination of short written answers and coding in R. All answers should be written in this document.
+
+**Please begin by adding your name to the top of the document on line 3.**
+
+**Note carefully** This assignment will involve using an API and web scraping. When you ``Knit`` your document it will re-run all of your code to produce the HTML version. It is possible this may produce an error if you have somehow exceeded your API rate limit (although this is unlikely). I recommend waiting for half an hour before retrying if you run into a rate-limit error.
+
+# **Part I: The Spotify API**
+ 
+## Set-up
+You will need to have a Spotify account and an active Spotify API key for this part of the homework. You can use the same credentials you created for the in-class assignment. Simply replace the template here with the version from class. 
+
+If you do not have credentials set up, follow the instructions from class and add your credentials to the `creds.json` file. You should be able to edit the file directly in RStudio by opening it from the Files tab on the right.
+  
+When you have completed this process your `creds.json` should look something like this:
+
+```
+{"id": "xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+"secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+```
+
+**Do not commit the credentials file when to Github when you submit the homework.**
+
+### Using the Spotify API
+
+We will be using the `spotifyr` package to access the Spotify API.
+
+Start by running this chunk to load required packages. You may need to install `reshape2`.
+```{r packages}
+library(spotifyr)
+library(tidyverse)
+library(jsonlite)
+library(lubridate)
+library(ggplot2)
+library(rvest)
+library(stringr)
+library(magrittr)
+library(reshape2)
+```
+
+Q1. Please run the following chunk to use your credentials to get an access token. If it does not work, check the `creds.json` file to verify that your credentials have been stored. Then answer the question below.
+```{r creds}
+creds <- read_json("creds.json") # read creds
+
+Sys.setenv(SPOTIFY_CLIENT_ID = creds$id) # set creds
+Sys.setenv(SPOTIFY_CLIENT_SECRET = creds$secret)
+
+access_token <- get_spotify_access_token() # retrieve access token
+```
+
+In one sentence, explain why you should keep your credentials in a separate file. 
+Answer here:
+
+Q2. Let's use the API to collect some data. Use the `get_featured_playlists` endpoint to get a set of featured playlists. Once you have done this, write code using tidyverse functions and the pipe operatr to answer the following questions. You can print the answers in the code chunk.
+
+a. How many playlists are returned?
+b. What is the mean number of tracks in these playlists?
+
+```{r q2}
+playlists <- get_featured_playlists() # get playlists
+  
+# a (Calculate your answer for Q2a here)
+
+# b
+
+```
+
+Q3. `spotifyr` contains a function to extract information on the tracks in each playlist. You have been provided with code to iterate over all playlists in the object above. Identify the appropriate function and complete the code below. You can leave the limit parameter at its default value.
+```{r q3}
+tracks <- tibble()
+for (p in playlists$id) {
+  t <- # Complete this line to get the tracks in each playlist, do not modify anything else
+  t$playlist_id <- p
+  tracks <- bind_rows(tracks, t)
+}
+```
+
+Q4. Let's take a look at the data we just collected. Write code below to answer the following questions.
+
+a. Select the columns containing the `playlist_id`,  track name, duration in miliseconds, popularity, and whether or not the track is explicit. Print the first ten rows.
+```{r q4a}
+
+```
+
+b. Construct a table containing the `playlist_id` and the average length in *seconds* of each playlist. Print the first 5 rows.
+```{r q4b}
+
+```
+
+c. Calculate the total length of each playlist. Print the names and lengths of the top 5 playlists by length.
+```{r q4c}
+
+```
+
+d. Calculate the proportion of explicit tracks in each playlist. Print the names of the playlists with the highest and lowest proportions.
+```{r q4d}
+
+```
+
+e. Compare the popularity of explicit and non-explicit songs. Which type has a higher popularity on average?
+
+```{r q4e}
+
+```
+
+Q5. Let's use the data in tracks to create a plot. Complete the code below to create a scatterplot. The y-axis should show the popularity and the x-axis should show the duration in seconds. Each point should be colored according to whether or not a song is explicit. As with some of the previous questions, remove tracks with zero popularity before plotting. 
+
+
+```{r q5}
+p <- ggplot( , # Add arguments here and in lines below
+       aes(x = , 
+           y = ,
+           color = )) + # add plot elements here
+p # run this line to print the plot
+```
+
+Finally, please provide written answers here to the following questions.
+
+a. Do the data show any relationship between popularity and duration?
+Answer:
+
+b. Do you notice any differences between explicit and non-explicit tracks?
+Answer:
+
+Q6. Let's move on to something more interesting. Pick two artists and run the code below to get their audio features. Then run the ggplot line to create plot and answer the questions below.
+
+```{r q6}
+a1 <- "" # Add name of artist 1 here
+a2 <- "" # Add name of artist 2 here
+af1 <- get_artist_audio_features(a1) %>% as_tibble()
+af2 <- get_artist_audio_features(a2) %>% as_tibble()
+both <- bind_rows(af1, af2) # Binding them together
+
+ggplot(both %>% group_by(artist_name, album_release_year) %>% 
+  summarize(n_tracks = n_distinct(track_id)), aes(x = album_release_year, 
+           y = artist_name, 
+           fill = n_tracks)) + geom_tile() +
+  scale_fill_gradient2(mid = "white", high= "blue") +
+  theme_minimal()
+```
+
+a. What does the plot show?
+Answer:
+
+b. Does this tell us anything interesting about the careers of the two artists?
+Answers:
+
+Q7. Use a different function from `spotifyr` to collect a dataset of your choice. You may combine multiple functions as necessary. Use these data to compare one or more artists/albums/tracks, etc. Use `ggplot` to visualize the data, making the plot as clear and understandable as possible. Write a short paragraph to explain what you are comparing and what the plot shows.
+
+```{r q7}
+
+
+```
+
+Findings:
+
+# **Part II: Web-scraping**
+
+### Preparation
+The second part of this assignment is designed to build familiarity with web-scraping. You will use `rvest` to collect data from Wikipedia. The lectures covered how to build a scraper and crawler from start-to-finish and how to package it up using functions. The goal of this part of the assignment is more modest. The aim is to demonstrate how you can extract and process different kinds of elements from a single web-page.
+
+Before starting this section, I recommend you get some more familiarity with HTML and CSS. Here are a few resources that you should find useful:
+
+  - HTML+CSS tutorial https://github.com/cassidoo/HTML-CSS-Tutorial 
+  - A quick reference for CSS selectors https://www.w3schools.com/cssref/css_selectors.asp
+  - Interactive CSS tutorial/game https://flukeout.github.io/
+  - CSS selector gadget https://selectorgadget.com/
+
+Q8. For each of the following HTML tags, write a one sentence description of what they do (e.g. `<head> ... </head>`: This defines the header of a web page):
+    
+    a. `<title> ... </title>`:
+    b. `<p> ... </p>`:
+    c. `<img src="...">`:
+    d. `<a href="...">...</a>`
+
+Q9. In the chunk below, `rvest` is used to read a Wikipedia page for Rutgers. I recommend you open this page in your browser and take a look at the content before proceeding.
+
+Complete the code below to extract the table titled "Fall First-Time Freshman Statistics". You will need to provide the relevant CSS selector then add another command to parse the table. Hint: `rvest` includes a function specifically designed for extracting tables from HTML.
+
+Once you have the object, print the number of admitted students in 2021. Hint: Make sure to verify the class of `t` and inspect its contents.
+
+```{r q9}
+wiki <- read_html("https://en.wikipedia.org/wiki/Rutgers_University")
+
+t <- wiki %>% html_nodes("") %>% # Complete the pipe to extract the table
+
+# Use `t` to print number of admits in 2021
+    
+```
+
+Q10. We can also extract other finds of elements from the HTML. Complete the arguments to retrieve the URL for the image of the Rutgers logo (the one at the bottom of the info panel that includes the text "The State University of New Jersey"). You will need to find the appropriate selector to pass to `html_nodes` and then the correct HTML attribute to select in `html_attr`. You do not need to add any additional functions to the pipe. 
+
+Note that the URL returned will be missing "https:" at the front so it will not work in your browser unless you add this.
+
+```{r q11, tidy=F}
+img.url <- wiki %>% 
+  html_nodes('') %>% # Add the relevant selector and attribute
+  html_attr('') %>% pluck(2) # Do not modify `pluck(2)`
+print(img.url)
+```
+
+When you render this document to HTML, the HTML snippet below will then use the `img.url` variable as the image source and will display the image in the output file.
+
+<center><img src="`r img.url`"></center>
+
+# End of assignment 
+You have reached the end of the assignment. Please read the submission instructions below.
+
+## AI use
+Please document any ways that you used ChatGPT or similar tools to help with this assignment:
+
+# Submission instructions
+Once you have finished the assignment, please complete the following steps to submit it:
+
+1. Click on the arrow next to ``Knit`` menu at the top of the screen and select ``Knit to HTML``. Assuming there are no errors in your code, this will render the RMarkdown document in HTML. Verify that this document contains all of your answers.
+2. When you are satisfied with the results, verify that the correct project is active then go to the top right Git panel in RStudio, check the boxes on the left next to `hw2.Rmd` and `hw2.html`. Do not add your credentials file!
+3. Click the `Commit` button. This will open up a new window.
+4. Write a message in the ``Commit message`` box then click `Commit`. If it is your final submission, the message should read "Homework submitted". Accept the pop-up that will appear and close the window.
+5. Finally, click the green arrow at the top of the Git tab to "push" your changes to Github.
+6. Visit your Github repository in your browser and verify that the final version of both files has been correctly uploaded.
